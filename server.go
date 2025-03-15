@@ -54,7 +54,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 			break
 		}
 
-		cmd := commands.ParseCmd(body)
+		cmd := commands.ParseCommand(body)
 
 		cmd.Process(conn)
 	}
@@ -80,18 +80,3 @@ func (s *Server) readCmdBody(conn net.Conn, msgLen uint32) ([]byte, error) {
 	fmt.Println(fmt.Sprintf("Body: %X", body))
 	return body, nil
 }
-
-// func (s *Server) parseCmdMessage(version byte, cmdCode uint16, cmdBytes []byte) *commands.MessageCommand {
-// 	correlationId := binary.BigEndian.Uint32(cmdBytes[:4])
-
-// 	cmd := commands.NewMessageCommand(
-// 		version,
-// 		cmdCode,
-// 		correlationId,
-// 		unLen,
-// 		username,
-// 	)
-// 	cmd.Print()
-
-// 	return cmd
-// }

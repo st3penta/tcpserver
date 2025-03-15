@@ -7,10 +7,8 @@ import (
 )
 
 type LoginCommand struct {
-	Metadata
-	CorrelationId uint32
-	UsernameLen   uint16
-	Username      string
+	metadata Metadata
+	username string
 }
 
 type LoginResponse = BaseResponse
@@ -19,22 +17,20 @@ func NewLoginCommand(
 	body []byte,
 ) *LoginCommand {
 
-	version := body[0]
-	cmdCode := binary.BigEndian.Uint16(body[1:3])
+	/*
+		Sample login packet (exluded length):
 
-	cmdBytes := body[3:]
-	correlationId := binary.BigEndian.Uint32(cmdBytes[:4])
-	usernameLen := binary.BigEndian.Uint16(cmdBytes[4:6])
-	username := string(cmdBytes[6:(6 + usernameLen)])
+			01							    0, 1 - Version
+				0001						1, 2 - Command
+					00000001				3, 4 - CorrelationId
+							0003			7, 2 - Username length
+								617364	    9, 3 - Username
+	*/
+	usernameLen := binary.BigEndian.Uint16(body[7:9])
 
 	lc := &LoginCommand{
-		Metadata: Metadata{
-			version: version,
-			cmdCode: cmdCode,
-		},
-		CorrelationId: correlationId,
-		UsernameLen:   usernameLen,
-		Username:      username,
+		metadata: parseMetadata(body),
+		username: string(body[9:(9 + usernameLen)]),
 	}
 
 	lc.Print()
@@ -45,11 +41,11 @@ func NewLoginCommand(
 func (lc *LoginCommand) Process(out io.Writer) {
 	resp := &LoginResponse{
 		Metadata: Metadata{
-			version: lc.version,
-			cmdCode: 3,
+			version:       lc.metadata.version,
+			cmdCode:       3,
+			correlationId: lc.metadata.correlationId,
 		},
-		CorrelationId: lc.CorrelationId,
-		StatusCode:    1,
+		StatusCode: 1,
 	}
 
 	resp.Write(out)
@@ -58,9 +54,8 @@ func (lc *LoginCommand) Process(out io.Writer) {
 func (lc *LoginCommand) Print() {
 	fmt.Println("-----")
 	fmt.Println("Login")
-	fmt.Println(fmt.Sprintf("version: %d", lc.version))
-	fmt.Println(fmt.Sprintf("correlationId: %d", lc.CorrelationId))
-	fmt.Println(fmt.Sprintf("usernameLen: %d", lc.UsernameLen))
-	fmt.Println(fmt.Sprintf("username: %s", lc.Username))
+	fmt.Println(fmt.Sprintf("version: %d", lc.metadata.version))
+	fmt.Println(fmt.Sprintf("correlationId: %d", lc.metadata.correlationId))
+	fmt.Println(fmt.Sprintf("username: %s", lc.username))
 	fmt.Println("-----")
 }
