@@ -7,6 +7,8 @@ import (
 
 var (
 	ErrMalformedMetadata = errors.New("malformed metadata")
+	ErrMalformedCommand  = errors.New("malformed command")
+	ErrUnknownCommand    = errors.New("unknown command")
 )
 
 type Command interface {
@@ -20,6 +22,10 @@ type Metadata struct {
 }
 
 func ParseCommand(body []byte) (Command, error) {
+	if len(body) < 3 {
+		return nil, ErrMalformedCommand
+	}
+
 	cmdCode := binary.BigEndian.Uint16(body[1:3])
 
 	switch cmdCode {
@@ -28,7 +34,7 @@ func ParseCommand(body []byte) (Command, error) {
 	// case 2:
 	// 	return s.parseCmdMessage(version, cmdCode, body[3:])
 	default:
-		panic("Command not recognized")
+		return nil, ErrUnknownCommand
 	}
 }
 
