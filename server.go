@@ -54,7 +54,11 @@ func (s *Server) handleConnection(conn net.Conn) {
 			break
 		}
 
-		cmd := commands.ParseCommand(body)
+		cmd, cmdErr := commands.ParseCommand(body)
+		if cmdErr != nil {
+			fmt.Println("Error while parsing command: ", cmdErr)
+			break
+		}
 
 		cmd.Process(conn)
 	}

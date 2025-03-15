@@ -2,20 +2,41 @@ package commands
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 )
 
+const (
+	LoginResponseLength = 9
+	LoginCommandCode    = 3
+)
+
+var (
+	ErrLoginCommandTooShort  = errors.New("malformed login command: message is too short")
+	ErrInvalidUsernameLength = errors.New("malformed login command: invalid username length")
+)
+
 type LoginCommand struct {
-	metadata Metadata
-	username string
+	metadata    Metadata
+	responseLen uint32
+	username    string
 }
 
 type LoginResponse = BaseResponse
 
 func NewLoginCommand(
 	body []byte,
-) *LoginCommand {
+) (*LoginCommand, error) {
+
+	metadata, mErr := parseMetadata(body)
+	if mErr != nil {
+		return nil, mErr
+	}
+
+	if len(body) < 9 {
+		return nil, ErrLoginCommandTooShort
+	}
 
 	/*
 		Sample login packet (exluded length):
@@ -28,24 +49,32 @@ func NewLoginCommand(
 	*/
 	usernameLen := binary.BigEndian.Uint16(body[7:9])
 
+	fmt.Println("body: ", len(body))
+	fmt.Println("usernameLen: ", usernameLen)
+	if len(body) != int(9+usernameLen) {
+		return nil, ErrInvalidUsernameLength
+	}
+
 	lc := &LoginCommand{
-		metadata: parseMetadata(body),
-		username: string(body[9:(9 + usernameLen)]),
+		metadata:    metadata,
+		responseLen: 9,
+		username:    string(body[9:(9 + usernameLen)]),
 	}
 
 	lc.Print()
 
-	return lc
+	return lc, nil
 }
 
 func (lc *LoginCommand) Process(out io.Writer) {
 	resp := &LoginResponse{
+		responseLength: LoginResponseLength,
 		Metadata: Metadata{
 			version:       lc.metadata.version,
-			cmdCode:       3,
+			cmdCode:       LoginCommandCode,
 			correlationId: lc.metadata.correlationId,
 		},
-		StatusCode: 1,
+		statusCode: 1,
 	}
 
 	resp.Write(out)

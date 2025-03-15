@@ -1,8 +1,27 @@
 package commands
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+	"errors"
+	"io"
+)
 
-func ParseCommand(body []byte) Command {
+var (
+	ErrMalformedMetadata = errors.New("malformed metadata")
+)
+
+type Command interface {
+	Process(io.Writer)
+	Print()
+}
+
+type Metadata struct {
+	version       byte
+	cmdCode       uint16
+	correlationId uint32
+}
+
+func ParseCommand(body []byte) (Command, error) {
 	cmdCode := binary.BigEndian.Uint16(body[1:3])
 
 	switch cmdCode {
@@ -15,19 +34,18 @@ func ParseCommand(body []byte) Command {
 	}
 }
 
-/*
-Sample login packet (exluded length):
+// Sample metadata (offset, length - description):
+// 01............   0, 1 - Version
+// ..0001........	1, 2 - Command
+// ......00000001	3, 4 - CorrelationId
+func parseMetadata(body []byte) (Metadata, error) {
+	if len(body) < 7 {
+		return Metadata{}, ErrMalformedMetadata
+	}
 
-	01							    0, 1 - Version
-		0001						1, 2 - Command
-			00000001				3, 4 - CorrelationId
-					0003			7, 2 - Username length
-						617364	    9, 3 - Username
-*/
-func parseMetadata(body []byte) Metadata {
 	return Metadata{
 		version:       body[0],
 		cmdCode:       binary.BigEndian.Uint16(body[1:3]),
 		correlationId: binary.BigEndian.Uint32(body[3:7]),
-	}
+	}, nil
 }
