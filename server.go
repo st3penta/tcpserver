@@ -60,7 +60,13 @@ func (s *Server) handleConnection(conn net.Conn) {
 			break
 		}
 
-		cmd.Process(conn)
+		resp, procErr := cmd.Process()
+		if procErr != nil {
+			fmt.Println("Error while processing command: ", procErr)
+			break
+		}
+
+		resp.Write(conn)
 	}
 }
 

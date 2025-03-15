@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"io"
 )
 
 const (
@@ -18,13 +17,13 @@ var (
 )
 
 type LoginCommand struct {
-	metadata    Metadata
-	responseLen uint32
-	username    string
+	metadata Metadata
+	username string
 }
 
-type LoginResponse = BaseResponse
-
+// Sample login packet (exluded length and metadata):
+// ..............0003			7, 2 - Username length
+// ..................617364		9, 3 - Username
 func NewLoginCommand(
 	body []byte,
 ) (*LoginCommand, error) {
@@ -38,36 +37,24 @@ func NewLoginCommand(
 		return nil, ErrLoginCommandTooShort
 	}
 
-	/*
-		Sample login packet (exluded length):
-
-			01							    0, 1 - Version
-				0001						1, 2 - Command
-					00000001				3, 4 - CorrelationId
-							0003			7, 2 - Username length
-								617364	    9, 3 - Username
-	*/
 	usernameLen := binary.BigEndian.Uint16(body[7:9])
 
-	fmt.Println("body: ", len(body))
-	fmt.Println("usernameLen: ", usernameLen)
 	if len(body) != int(9+usernameLen) {
 		return nil, ErrInvalidUsernameLength
 	}
 
 	lc := &LoginCommand{
-		metadata:    metadata,
-		responseLen: 9,
-		username:    string(body[9:(9 + usernameLen)]),
+		metadata: metadata,
+		username: string(body[9:(9 + usernameLen)]),
 	}
 
-	lc.Print()
+	lc.print()
 
 	return lc, nil
 }
 
-func (lc *LoginCommand) Process(out io.Writer) {
-	resp := &LoginResponse{
+func (lc *LoginCommand) Process() (*Response, error) {
+	return &Response{
 		responseLength: LoginResponseLength,
 		Metadata: Metadata{
 			version:       lc.metadata.version,
@@ -75,16 +62,14 @@ func (lc *LoginCommand) Process(out io.Writer) {
 			correlationId: lc.metadata.correlationId,
 		},
 		statusCode: 1,
-	}
-
-	resp.Write(out)
+	}, nil
 }
 
-func (lc *LoginCommand) Print() {
+func (lc *LoginCommand) print() {
 	fmt.Println("-----")
 	fmt.Println("Login")
-	fmt.Println(fmt.Sprintf("version: %d", lc.metadata.version))
-	fmt.Println(fmt.Sprintf("correlationId: %d", lc.metadata.correlationId))
-	fmt.Println(fmt.Sprintf("username: %s", lc.username))
+	fmt.Println(fmt.Sprintf("   version: %d", lc.metadata.version))
+	fmt.Println(fmt.Sprintf("   correlationId: %d", lc.metadata.correlationId))
+	fmt.Println(fmt.Sprintf("   username: %s", lc.username))
 	fmt.Println("-----")
 }

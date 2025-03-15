@@ -3,7 +3,6 @@ package commands
 import (
 	"encoding/binary"
 	"errors"
-	"io"
 )
 
 var (
@@ -11,8 +10,7 @@ var (
 )
 
 type Command interface {
-	Process(io.Writer)
-	Print()
+	Process() (*Response, error)
 }
 
 type Metadata struct {
