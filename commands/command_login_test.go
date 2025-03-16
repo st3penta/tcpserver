@@ -69,13 +69,9 @@ func Test_LoginCommand_Process(t *testing.T) {
 				username: "TestUser",
 			},
 			wantRes: &Response{
-				responseLength: 9,
-				Metadata: Metadata{
-					version:       1,
-					cmdCode:       1,
-					correlationId: 1,
-				},
-				statusCode: 1,
+				version:       1,
+				correlationID: 1,
+				statusCode:    1,
 			},
 			wantErr: nil,
 		},

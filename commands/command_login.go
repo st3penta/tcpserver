@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	LoginResponseLength = uint32(9)
-	LoginCommandCode    = uint16(1)
+	LoginResponseLength uint32 = 0x0009
+	LoginCommandCode    uint16 = 0x01
 
 	ErrLoginCommandTooShort  = errors.New("malformed login command: message is too short")
 	ErrInvalidUsernameLength = errors.New("malformed login command: invalid username length")
@@ -49,13 +49,9 @@ func NewLoginCommand(
 
 func (lc *LoginCommand) Process() (*Response, error) {
 	return &Response{
-		responseLength: LoginResponseLength,
-		Metadata: Metadata{
-			version:       lc.metadata.version,
-			cmdCode:       LoginCommandCode,
-			correlationId: lc.metadata.correlationId,
-		},
-		statusCode: 1,
+		version:       lc.metadata.version,
+		correlationID: lc.metadata.correlationId,
+		statusCode:    1,
 	}, nil
 }
 

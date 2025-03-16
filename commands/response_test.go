@@ -16,13 +16,9 @@ func Test_Response_Write(t *testing.T) {
 		{
 			name: "happy path: login command gets processed",
 			response: &Response{
-				responseLength: 9,
-				Metadata: Metadata{
-					version:       1,
-					cmdCode:       1,
-					correlationId: 1,
-				},
-				statusCode: 1,
+				version:       1,
+				correlationID: 1,
+				statusCode:    1,
 			},
 			wantOutput: "\x00\x00\x00\x09\x01\x00\x03\x00\x00\x00\x01\x00\x01",
 		},
