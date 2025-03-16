@@ -3,7 +3,7 @@ package commands
 import (
 	"bufio"
 	"bytes"
-	"errors"
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,13 +29,13 @@ func Test_NewLoginCommand(t *testing.T) {
 			name:    "error: malformed command, length field too short",
 			body:    "\x01",
 			wantRes: nil,
-			wantErr: errors.New("unexpected EOF"),
+			wantErr: io.ErrUnexpectedEOF,
 		},
 		{
 			name:    "error: malformed command, username length incorrect length",
 			body:    "\x00\x08short",
 			wantRes: nil,
-			wantErr: errors.New("unexpected EOF"),
+			wantErr: io.ErrUnexpectedEOF,
 		},
 	}
 	for _, tt := range tests {

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -45,13 +46,13 @@ func Test_ParseCommand(t *testing.T) {
 			name:    "error: malformed command, length field too short",
 			body:    "\x01\x00",
 			wantRes: nil,
-			wantErr: errors.New("unexpected EOF"),
+			wantErr: io.ErrUnexpectedEOF,
 		},
 		{
 			name:    "error: malformed command, incorrect length",
 			body:    "\x00\x00\x00\x11\x01",
 			wantRes: nil,
-			wantErr: errors.New("unexpected EOF"),
+			wantErr: io.ErrUnexpectedEOF,
 		},
 		{
 			name:    "error: malformed command, missing metadata",
@@ -63,13 +64,13 @@ func Test_ParseCommand(t *testing.T) {
 			name:    "error: malformed metadata, command code too short",
 			body:    "\x00\x00\x00\x02\x01\x00",
 			wantRes: nil,
-			wantErr: errors.New("unexpected EOF"),
+			wantErr: io.ErrUnexpectedEOF,
 		},
 		{
 			name:    "error: malformed command, correlationId too short",
 			body:    "\x00\x00\x00\x06\x01\x00\x01\x00\x00\x00",
 			wantRes: nil,
-			wantErr: errors.New("unexpected EOF"),
+			wantErr: io.ErrUnexpectedEOF,
 		},
 		{
 			name:    "error: unknown command",
