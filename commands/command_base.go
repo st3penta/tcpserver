@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 )
 
 var (
@@ -17,6 +18,7 @@ var (
 
 type State interface {
 	Login(conn io.Reader, username string) error
+	EnqueueMessage(from string, to string, timestamp time.Time, message string) error
 }
 
 type Command interface {
@@ -61,16 +63,6 @@ func readFieldWithLength(stream io.Reader, fieldLen any) ([]byte, error) {
 	var field []byte
 
 	switch fieldLen.(type) {
-	case uint:
-
-		tFieldLen := fieldLen.(uint)
-		err := binary.Read(stream, binary.BigEndian, &tFieldLen)
-		if err != nil {
-			return nil, err
-		}
-
-		field = make([]byte, tFieldLen)
-
 	case uint16:
 
 		tFieldLen := fieldLen.(uint16)

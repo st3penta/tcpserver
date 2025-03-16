@@ -63,7 +63,7 @@ func NewMessageCommand(
 
 func (mc *MessageCommand) Process(state State) (*Response, error) {
 
-	// TODO actual message processing
+	state.EnqueueMessage(mc.from, mc.to, mc.timestamp, mc.message)
 
 	return &Response{
 		version:       mc.metadata.version,
