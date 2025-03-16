@@ -33,7 +33,7 @@ func Test_NewLoginCommand(t *testing.T) {
 			wantErr: io.ErrUnexpectedEOF,
 		},
 		{
-			name:    "error: malformed command, username length incorrect length",
+			name:    "error: malformed command, username length incorrect",
 			body:    "\x00\x08short",
 			wantRes: nil,
 			wantErr: io.ErrUnexpectedEOF,
@@ -64,7 +64,7 @@ func Test_LoginCommand_Process(t *testing.T) {
 			lc: &LoginCommand{
 				metadata: Metadata{
 					version:       1,
-					cmdCode:       1,
+					cmdCode:       LoginCommandCode,
 					correlationId: 1,
 				},
 				username: "TestUser",
