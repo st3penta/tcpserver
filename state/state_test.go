@@ -1,8 +1,7 @@
 package state
 
 import (
-	"bufio"
-	"io"
+	"net"
 	"testing"
 	"time"
 
@@ -10,12 +9,12 @@ import (
 )
 
 func Test_State_Login(t *testing.T) {
-	mockConn := bufio.NewReader(nil)
+	mockConn := net.TCPConn{}
 
 	tests := []struct {
 		name      string
 		state     *State
-		conn      io.Reader
+		conn      net.Conn
 		username  string
 		wantState *State
 		wantErr   error
@@ -23,16 +22,17 @@ func Test_State_Login(t *testing.T) {
 		{
 			name:     "happy path",
 			state:    NewState(),
-			conn:     mockConn,
+			conn:     &mockConn,
 			username: "user1",
 			wantState: &State{
 				LoggedUsers: map[string]bool{
 					"user1": true,
 				},
 				Messages: map[string]chan Message{},
-				Connections: map[io.Reader]string{
-					mockConn: "user1",
+				Connections: map[net.Conn]string{
+					&mockConn: "user1",
 				},
+				Interrupts: map[string]chan bool{},
 			},
 			wantErr: nil,
 		},
@@ -43,20 +43,22 @@ func Test_State_Login(t *testing.T) {
 					"user1": true,
 				},
 				Messages: map[string]chan Message{},
-				Connections: map[io.Reader]string{
-					mockConn: "user1",
+				Connections: map[net.Conn]string{
+					&mockConn: "user1",
 				},
+				Interrupts: map[string]chan bool{},
 			},
-			conn:     mockConn,
+			conn:     &mockConn,
 			username: "user1",
 			wantState: &State{
 				LoggedUsers: map[string]bool{
 					"user1": true,
 				},
 				Messages: map[string]chan Message{},
-				Connections: map[io.Reader]string{
-					mockConn: "user1",
+				Connections: map[net.Conn]string{
+					&mockConn: "user1",
 				},
+				Interrupts: map[string]chan bool{},
 			},
 			wantErr: ErrUserAlreadyOnline,
 		},
@@ -73,12 +75,12 @@ func Test_State_Login(t *testing.T) {
 }
 
 func Test_State_Logout(t *testing.T) {
-	mockConn := bufio.NewReader(nil)
+	mockConn := net.TCPConn{}
 
 	tests := []struct {
 		name      string
 		state     *State
-		conn      io.Reader
+		conn      net.Conn
 		wantState *State
 	}{
 		{
@@ -88,17 +90,17 @@ func Test_State_Logout(t *testing.T) {
 					"user1": true,
 				},
 				Messages: map[string]chan Message{},
-				Connections: map[io.Reader]string{
-					mockConn: "user1",
+				Connections: map[net.Conn]string{
+					&mockConn: "user1",
 				},
 			},
-			conn: mockConn,
+			conn: &mockConn,
 			wantState: &State{
 				LoggedUsers: map[string]bool{
 					"user1": false,
 				},
 				Messages:    map[string]chan Message{},
-				Connections: map[io.Reader]string{},
+				Connections: map[net.Conn]string{},
 			},
 		},
 	}
@@ -113,8 +115,8 @@ func Test_State_Logout(t *testing.T) {
 }
 
 func Test_State_EnqueueMessage(t *testing.T) {
-	mockConn1 := bufio.NewReader(nil)
-	mockConn2 := bufio.NewReader(nil)
+	mockConn1 := net.TCPConn{}
+	mockConn2 := net.TCPConn{}
 
 	tests := []struct {
 		name         string
@@ -136,9 +138,13 @@ func Test_State_EnqueueMessage(t *testing.T) {
 				Messages: map[string]chan Message{
 					"recipient": make(chan Message, MessageQueueMaxSize),
 				},
-				Connections: map[io.Reader]string{
-					mockConn1: "sender",
-					mockConn2: "recipient",
+				Connections: map[net.Conn]string{
+					&mockConn1: "sender",
+					&mockConn2: "recipient",
+				},
+				Interrupts: map[string]chan bool{
+					"sender":    make(chan bool, 1),
+					"recipient": make(chan bool, 1),
 				},
 			},
 			from:      "sender",
@@ -162,9 +168,13 @@ func Test_State_EnqueueMessage(t *testing.T) {
 					"recipient": true,
 				},
 				Messages: map[string]chan Message{},
-				Connections: map[io.Reader]string{
-					mockConn1: "sender",
-					mockConn2: "recipient",
+				Connections: map[net.Conn]string{
+					&mockConn1: "sender",
+					&mockConn2: "recipient",
+				},
+				Interrupts: map[string]chan bool{
+					"sender":    make(chan bool, 1),
+					"recipient": make(chan bool, 1),
 				},
 			},
 			from:      "sender",
@@ -188,9 +198,12 @@ func Test_State_EnqueueMessage(t *testing.T) {
 					"recipient": false,
 				},
 				Messages: map[string]chan Message{},
-				Connections: map[io.Reader]string{
-					mockConn1: "sender",
-					mockConn2: "recipient",
+				Connections: map[net.Conn]string{
+					&mockConn1: "sender",
+					&mockConn2: "recipient",
+				},
+				Interrupts: map[string]chan bool{
+					"sender": make(chan bool, 1),
 				},
 			},
 			from:      "sender",
@@ -213,9 +226,12 @@ func Test_State_EnqueueMessage(t *testing.T) {
 					"sender": true,
 				},
 				Messages: map[string]chan Message{},
-				Connections: map[io.Reader]string{
-					mockConn1: "sender",
-					mockConn2: "recipient",
+				Connections: map[net.Conn]string{
+					&mockConn1: "sender",
+					&mockConn2: "recipient",
+				},
+				Interrupts: map[string]chan bool{
+					"sender": make(chan bool, 1),
 				},
 			},
 			from:         "sender",

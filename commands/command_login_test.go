@@ -82,7 +82,7 @@ func Test_LoginCommand_Process(t *testing.T) {
 				LoggedUsers: map[string]bool{
 					"user1": true,
 				},
-				Connections: map[io.Reader]string{
+				Connections: map[net.Conn]string{
 					&mockConn1: "user1",
 				},
 			},
@@ -96,7 +96,7 @@ func Test_LoginCommand_Process(t *testing.T) {
 					"user1": true,
 					"user2": true,
 				},
-				Connections: map[io.Reader]string{
+				Connections: map[net.Conn]string{
 					&mockConn1: "user1",
 					&mockConn2: "user2",
 				},

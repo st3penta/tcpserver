@@ -3,7 +3,7 @@ package state
 import (
 	"errors"
 	"fmt"
-	"io"
+	"net"
 	"time"
 )
 
@@ -17,20 +17,22 @@ var (
 )
 
 type State struct {
-	Connections map[io.Reader]string
+	Connections map[net.Conn]string
 	LoggedUsers map[string]bool
-	Messages    map[string](chan Message)
+	Messages    map[string]chan Message
+	Interrupts  map[string]chan bool
 }
 
 func NewState() *State {
 	return &State{
+		Connections: map[net.Conn]string{},
 		LoggedUsers: map[string]bool{},
 		Messages:    map[string](chan Message){},
-		Connections: map[io.Reader]string{},
+		Interrupts:  map[string]chan bool{},
 	}
 }
 
-func (s *State) Login(conn io.Reader, username string) error {
+func (s *State) Login(conn net.Conn, username string) error {
 
 	if s.userIsOnline(username) {
 		return ErrUserAlreadyOnline
@@ -42,7 +44,7 @@ func (s *State) Login(conn io.Reader, username string) error {
 	return nil
 }
 
-func (s *State) Logout(conn io.Reader) {
+func (s *State) Logout(conn net.Conn) {
 	s.LoggedUsers[s.Connections[conn]] = false
 	delete(s.Connections, conn)
 }
@@ -56,6 +58,11 @@ func (s *State) EnqueueMessage(from string, to string, timestamp time.Time, mess
 	_, ok := s.Messages[to]
 	if !ok {
 		s.Messages[to] = make(chan Message, MessageQueueMaxSize)
+	}
+
+	_, ok = s.Interrupts[to]
+	if !ok {
+		s.Interrupts[to] = make(chan bool, 1)
 	}
 
 	s.Messages[to] <- Message{
