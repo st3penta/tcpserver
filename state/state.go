@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"sync"
 	"time"
 )
 
@@ -13,10 +14,11 @@ const (
 
 var (
 	ErrUserAlreadyOnline  = errors.New("user already online")
-	ErrRecipientNotExists = errors.New("recipent doesn't exist")
+	ErrRecipientNotExists = errors.New("recipient doesn't exist")
 )
 
 type State struct {
+	mutex       sync.Mutex
 	Connections map[net.Conn]string
 	LoggedUsers map[string]bool
 	Messages    map[string]chan Message
@@ -25,6 +27,7 @@ type State struct {
 
 func NewState() *State {
 	return &State{
+		mutex:       sync.Mutex{},
 		Connections: map[net.Conn]string{},
 		LoggedUsers: map[string]bool{},
 		Messages:    map[string](chan Message){},
@@ -38,15 +41,19 @@ func (s *State) Login(conn net.Conn, username string) error {
 		return ErrUserAlreadyOnline
 	}
 
+	s.mutex.Lock()
 	s.LoggedUsers[username] = true
 	s.Connections[conn] = username
+	s.mutex.Unlock()
 
 	return nil
 }
 
 func (s *State) Logout(conn net.Conn) {
+	s.mutex.Lock()
 	s.LoggedUsers[s.Connections[conn]] = false
 	delete(s.Connections, conn)
+	s.mutex.Unlock()
 }
 
 func (s *State) EnqueueMessage(from string, to string, timestamp time.Time, message string) error {
@@ -75,12 +82,17 @@ func (s *State) EnqueueMessage(from string, to string, timestamp time.Time, mess
 }
 
 func (s *State) userExists(username string) bool {
+	s.mutex.Lock()
 	_, ok := s.LoggedUsers[username]
+	s.mutex.Unlock()
 	return ok
 }
 
 func (s *State) userIsOnline(username string) bool {
-	return s.LoggedUsers[username]
+	s.mutex.Lock()
+	isOnline := s.LoggedUsers[username]
+	s.mutex.Unlock()
+	return isOnline
 }
 
 type Message struct {
