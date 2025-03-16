@@ -2,16 +2,12 @@ package commands
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"io"
 )
 
-var (
+const (
 	LoginCommandCode uint16 = 0x01
-
-	ErrLoginCommandTooShort  = errors.New("malformed login command: message is too short")
-	ErrInvalidUsernameLength = errors.New("malformed login command: invalid username length")
 )
 
 type LoginCommand struct {
