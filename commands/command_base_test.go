@@ -30,6 +30,18 @@ func Test_ParseCommand(t *testing.T) {
 			wantErr: nil,
 		},
 		{
+			name: "happy path: correct correlationIDTest packet gets parsed",
+			body: "\x00\x00\x00\x07\x01\x00\x09\x00\x00\x00\x0A",
+			wantRes: &CorrelationIDTestCommand{
+				metadata: Metadata{
+					version:       1,
+					cmdCode:       9,
+					correlationId: 10,
+				},
+			},
+			wantErr: nil,
+		},
+		{
 			name:    "error: malformed command, length field too short",
 			body:    "\x01\x00",
 			wantRes: nil,
