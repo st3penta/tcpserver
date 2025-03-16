@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -39,6 +40,23 @@ func Test_ParseCommand(t *testing.T) {
 					cmdCode:       9,
 					correlationId: 10,
 				},
+			},
+			wantErr: nil,
+		},
+
+		{
+			name: "happy path: correct message packet gets parsed",
+			body: "\x00\x00\x00\x1A\x01\x00\x02\x00\x00\x00\x01\x00\x03\x6D\x73\x67\x00\x01\x75\x00\x01\x72\x18\x16\x68\x7E\xC0\x57\x00\x00",
+			wantRes: &MessageCommand{
+				metadata: Metadata{
+					version:       1,
+					cmdCode:       2,
+					correlationId: 1,
+				},
+				message:   "msg",
+				from:      "u",
+				to:        "r",
+				timestamp: time.Unix(1735689600, 0),
 			},
 			wantErr: nil,
 		},

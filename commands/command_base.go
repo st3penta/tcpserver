@@ -4,13 +4,15 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 )
 
 var (
-	ErrMalformedMetadata = errors.New("malformed metadata")
-	ErrMalformedCommand  = errors.New("malformed command")
-	ErrUnknownCommand    = errors.New("unknown command")
+	ErrMalformedMetadata     = errors.New("malformed metadata")
+	ErrMalformedCommand      = errors.New("malformed command")
+	ErrUnknownCommand        = errors.New("unknown command")
+	ErrUnsupportedLengthSize = errors.New("unsupported length size")
 )
 
 type Command interface {
@@ -25,10 +27,12 @@ type Metadata struct {
 
 func ParseCommand(stream io.Reader) (Command, error) {
 
-	body, bErr := readFieldWithLength(stream)
+	var len uint32
+	body, bErr := readFieldWithLength(stream, len)
 	if bErr != nil {
 		return nil, bErr
 	}
+	fmt.Printf("### Received command: %X\n", body)
 
 	bodyStream := bytes.NewBuffer(body)
 
@@ -40,24 +44,54 @@ func ParseCommand(stream io.Reader) (Command, error) {
 	switch metadata.cmdCode {
 	case LoginCommandCode:
 		return NewLoginCommand(*metadata, bodyStream)
+	case MessageCommandCode:
+		return NewMessageCommand(*metadata, bodyStream)
 	case CorrelationIDTestCommandCode:
 		return NewCorrelationIDTestCommand(*metadata, bodyStream)
-	// case MessageCommandCode:
-	// 	return s.parseCmdMessage(version, cmdCode, body[3:])
 	default:
 		return nil, ErrUnknownCommand
 	}
 }
 
-func readFieldWithLength(stream io.Reader) ([]byte, error) {
-	var fieldLen uint32
-	err := binary.Read(stream, binary.BigEndian, &fieldLen)
-	if err != nil {
-		return nil, err
+func readFieldWithLength(stream io.Reader, fieldLen any) ([]byte, error) {
+	var field []byte
+
+	switch fieldLen.(type) {
+	case uint:
+
+		tFieldLen := fieldLen.(uint)
+		err := binary.Read(stream, binary.BigEndian, &tFieldLen)
+		if err != nil {
+			return nil, err
+		}
+
+		field = make([]byte, tFieldLen)
+
+	case uint16:
+
+		tFieldLen := fieldLen.(uint16)
+		err := binary.Read(stream, binary.BigEndian, &tFieldLen)
+		if err != nil {
+			return nil, err
+		}
+
+		field = make([]byte, tFieldLen)
+
+	case uint32:
+
+		tFieldLen := fieldLen.(uint32)
+		err := binary.Read(stream, binary.BigEndian, &tFieldLen)
+		if err != nil {
+			return nil, err
+		}
+
+		field = make([]byte, tFieldLen)
+
+	default:
+		return nil, ErrUnsupportedLengthSize
 	}
 
-	field := make([]byte, fieldLen)
-	_, err = io.ReadFull(stream, field)
+	_, err := io.ReadFull(stream, field)
 	if err != nil {
 		return nil, err
 	}
