@@ -57,8 +57,8 @@ func (lc *LoginCommand) Process() (*Response, error) {
 func (lc *LoginCommand) print() {
 	fmt.Println("-----")
 	fmt.Println("Login")
-	fmt.Println(fmt.Sprintf("   version: %d", lc.metadata.version))
-	fmt.Println(fmt.Sprintf("   correlationId: %d", lc.metadata.correlationId))
-	fmt.Println(fmt.Sprintf("   username: %s", lc.username))
+	fmt.Printf("   version: %d\n", lc.metadata.version)
+	fmt.Printf("   correlationId: %d\n", lc.metadata.correlationId)
+	fmt.Printf("   username: %s\n", lc.username)
 	fmt.Println("-----")
 }

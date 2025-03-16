@@ -20,10 +20,26 @@ type Response struct {
 	statusCode    uint16
 }
 
-func (r *Response) Write(out io.Writer) {
-	binary.Write(out, binary.BigEndian, ResponseLength)
-	binary.Write(out, binary.BigEndian, r.version)
-	binary.Write(out, binary.BigEndian, ResponseMsgCode)
-	binary.Write(out, binary.BigEndian, r.correlationID)
-	binary.Write(out, binary.BigEndian, r.statusCode)
+func (r *Response) Write(out io.Writer) error {
+	err := binary.Write(out, binary.BigEndian, ResponseLength)
+	if err != nil {
+		return err
+	}
+
+	err = binary.Write(out, binary.BigEndian, r.version)
+	if err != nil {
+		return err
+	}
+
+	err = binary.Write(out, binary.BigEndian, ResponseMsgCode)
+	if err != nil {
+		return err
+	}
+
+	err = binary.Write(out, binary.BigEndian, r.correlationID)
+	if err != nil {
+		return err
+	}
+
+	return binary.Write(out, binary.BigEndian, r.statusCode)
 }

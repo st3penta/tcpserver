@@ -62,6 +62,10 @@ func (s *Server) handleConnection(conn net.Conn) {
 			break
 		}
 
-		resp.Write(conn)
+		wErr := resp.Write(conn)
+		if wErr != nil {
+			fmt.Println("Error while writing response on socket:", wErr)
+			break
+		}
 	}
 }

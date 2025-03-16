@@ -39,7 +39,7 @@ func (cc *CorrelationIDTestCommand) Process() (*Response, error) {
 func (cc *CorrelationIDTestCommand) print() {
 	fmt.Println("-----")
 	fmt.Println("CorrelationID Test")
-	fmt.Println(fmt.Sprintf("   version: %d", cc.metadata.version))
-	fmt.Println(fmt.Sprintf("   correlationId: %d", cc.metadata.correlationId))
+	fmt.Printf("   version: %d\n", cc.metadata.version)
+	fmt.Printf("   correlationId: %d\n", cc.metadata.correlationId)
 	fmt.Println("-----")
 }

@@ -12,6 +12,7 @@ func Test_Response_Write(t *testing.T) {
 		name       string
 		response   *Response
 		wantOutput string
+		wantErr    error
 	}{
 		{
 			name: "happy path: login command gets processed",
@@ -28,9 +29,10 @@ func Test_Response_Write(t *testing.T) {
 
 			var buf bytes.Buffer
 
-			tt.response.Write(&buf)
+			err := tt.response.Write(&buf)
 
 			assert.Equal(t, []byte(tt.wantOutput), buf.Bytes())
+			assert.Equal(t, tt.wantErr, err)
 		})
 	}
 }
