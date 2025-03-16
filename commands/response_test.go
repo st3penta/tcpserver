@@ -19,7 +19,7 @@ func Test_Response_Write(t *testing.T) {
 				responseLength: 9,
 				Metadata: Metadata{
 					version:       1,
-					cmdCode:       3,
+					cmdCode:       1,
 					correlationId: 1,
 				},
 				statusCode: 1,

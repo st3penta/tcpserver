@@ -1,6 +1,9 @@
 package commands
 
 import (
+	"bufio"
+	"bytes"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,40 +18,32 @@ func Test_NewLoginCommand(t *testing.T) {
 	}{
 		{
 			name: "happy path: correct login packet gets parsed",
-			body: "\x01\x00\x01\x00\x00\x00\x01\x00\x08TestUser",
+			body: "\x00\x08TestUser",
 			wantRes: &LoginCommand{
-				metadata: Metadata{
-					version:       1,
-					cmdCode:       1,
-					correlationId: 1,
-				},
+				metadata: Metadata{},
 				username: "TestUser",
 			},
 			wantErr: nil,
 		},
 		{
-			name:    "malformed packet: incomplete metadata",
-			body:    "\x01\x00\x01\x00",
+			name:    "error: malformed command, length field too short",
+			body:    "\x01",
 			wantRes: nil,
-			wantErr: ErrMalformedMetadata,
+			wantErr: errors.New("unexpected EOF"),
 		},
 		{
-			name:    "malformed packet: command is too short",
-			body:    "\x01\x00\x01\x00\x00\x00\x01\x00",
+			name:    "error: malformed command, username length incorrect length",
+			body:    "\x00\x08short",
 			wantRes: nil,
-			wantErr: ErrLoginCommandTooShort,
-		},
-		{
-			name:    "happy path: invalid username length",
-			body:    "\x01\x00\x01\x00\x00\x00\x01\x00\x08short",
-			wantRes: nil,
-			wantErr: ErrInvalidUsernameLength,
+			wantErr: errors.New("unexpected EOF"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			res, err := NewLoginCommand([]byte(tt.body))
+			buf := bufio.NewReader(bytes.NewBuffer([]byte(tt.body)))
+
+			res, err := NewLoginCommand(Metadata{}, buf)
 
 			assert.Equal(t, tt.wantRes, res)
 			assert.Equal(t, tt.wantErr, err)
@@ -77,7 +72,7 @@ func Test_LoginCommand_Process(t *testing.T) {
 				responseLength: 9,
 				Metadata: Metadata{
 					version:       1,
-					cmdCode:       3,
+					cmdCode:       1,
 					correlationId: 1,
 				},
 				statusCode: 1,

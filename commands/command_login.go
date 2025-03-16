@@ -4,14 +4,13 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-)
-
-const (
-	LoginResponseLength = 9
-	LoginCommandCode    = 3
+	"io"
 )
 
 var (
+	LoginResponseLength = uint32(9)
+	LoginCommandCode    = uint16(1)
+
 	ErrLoginCommandTooShort  = errors.New("malformed login command: message is too short")
 	ErrInvalidUsernameLength = errors.New("malformed login command: invalid username length")
 )
@@ -21,31 +20,26 @@ type LoginCommand struct {
 	username string
 }
 
-// Sample login packet (exluded length and metadata):
-// ..............0003			7, 2 - Username length
-// ..................617364		9, 3 - Username
 func NewLoginCommand(
-	body []byte,
+	metadata Metadata,
+	stream io.Reader,
 ) (*LoginCommand, error) {
 
-	metadata, mErr := parseMetadata(body)
-	if mErr != nil {
-		return nil, mErr
+	var usernameLen uint16
+	lErr := binary.Read(stream, binary.BigEndian, &usernameLen)
+	if lErr != nil {
+		return nil, lErr
 	}
 
-	if len(body) < 9 {
-		return nil, ErrLoginCommandTooShort
-	}
-
-	usernameLen := binary.BigEndian.Uint16(body[7:9])
-
-	if len(body) != int(9+usernameLen) {
-		return nil, ErrInvalidUsernameLength
+	username := make([]byte, usernameLen)
+	_, uErr := io.ReadFull(stream, username)
+	if uErr != nil {
+		return nil, uErr
 	}
 
 	lc := &LoginCommand{
 		metadata: metadata,
-		username: string(body[9:(9 + usernameLen)]),
+		username: string(username),
 	}
 
 	lc.print()

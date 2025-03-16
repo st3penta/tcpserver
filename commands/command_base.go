@@ -1,8 +1,10 @@
 package commands
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
+	"io"
 )
 
 var (
@@ -21,35 +23,69 @@ type Metadata struct {
 	correlationId uint32
 }
 
-func ParseCommand(body []byte) (Command, error) {
-	if len(body) < 3 {
-		return nil, ErrMalformedCommand
+func ParseCommand(stream io.Reader) (Command, error) {
+
+	body, bErr := readFieldWithLength(stream)
+	if bErr != nil {
+		return nil, bErr
 	}
 
-	cmdCode := binary.BigEndian.Uint16(body[1:3])
+	bodyStream := bytes.NewBuffer(body)
 
-	switch cmdCode {
-	case 1:
-		return NewLoginCommand(body)
-	// case 2:
+	metadata, mErr := parseMetadata(bodyStream)
+	if mErr != nil {
+		return nil, mErr
+	}
+
+	switch metadata.cmdCode {
+	case LoginCommandCode:
+		return NewLoginCommand(*metadata, bodyStream)
+	// case MessageCommandCode:
 	// 	return s.parseCmdMessage(version, cmdCode, body[3:])
 	default:
 		return nil, ErrUnknownCommand
 	}
 }
 
-// Sample metadata (offset, length - description):
-// 01............   0, 1 - Version
-// ..0001........	1, 2 - Command
-// ......00000001	3, 4 - CorrelationId
-func parseMetadata(body []byte) (Metadata, error) {
-	if len(body) < 7 {
-		return Metadata{}, ErrMalformedMetadata
+func readFieldWithLength(stream io.Reader) ([]byte, error) {
+	var fieldLen uint32
+	err := binary.Read(stream, binary.BigEndian, &fieldLen)
+	if err != nil {
+		return nil, err
 	}
 
-	return Metadata{
-		version:       body[0],
-		cmdCode:       binary.BigEndian.Uint16(body[1:3]),
-		correlationId: binary.BigEndian.Uint32(body[3:7]),
+	field := make([]byte, fieldLen)
+	_, err = io.ReadFull(stream, field)
+	if err != nil {
+		return nil, err
+	}
+
+	return field, nil
+}
+
+func parseMetadata(stream io.Reader) (*Metadata, error) {
+
+	var version byte
+	vErr := binary.Read(stream, binary.BigEndian, &version)
+	if vErr != nil {
+		return nil, vErr
+	}
+
+	var cmdCode uint16
+	cErr := binary.Read(stream, binary.BigEndian, &cmdCode)
+	if cErr != nil {
+		return nil, cErr
+	}
+
+	var correlationId uint32
+	crErr := binary.Read(stream, binary.BigEndian, &correlationId)
+	if crErr != nil {
+		return nil, crErr
+	}
+
+	return &Metadata{
+		version:       version,
+		cmdCode:       cmdCode,
+		correlationId: correlationId,
 	}, nil
 }
