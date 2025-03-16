@@ -59,7 +59,7 @@ func Test_NewLoginCommand(t *testing.T) {
 func Test_LoginCommand_Process(t *testing.T) {
 	mockConn1 := net.TCPConn{}
 	mockConn2 := net.TCPConn{}
-	tests := []struct {
+	tests := []*struct {
 		name      string
 		lc        *LoginCommand
 		state     state.State
@@ -133,7 +133,10 @@ func Test_LoginCommand_Process(t *testing.T) {
 			res, err := tt.lc.Process(&tt.state)
 
 			assert.Equal(t, tt.wantRes, res)
-			assert.Equal(t, tt.wantState, tt.state)
+			assert.Equal(t, tt.wantState.LoggedUsers, tt.state.LoggedUsers)
+			assert.Equal(t, tt.wantState.Connections, tt.state.Connections)
+			assert.Equal(t, tt.wantState.Messages, tt.state.Messages)
+			assert.Equal(t, tt.wantState.Interrupts, tt.state.Interrupts)
 			assert.Equal(t, tt.wantErr, err)
 		})
 	}

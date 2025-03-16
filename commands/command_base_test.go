@@ -112,7 +112,7 @@ func Test_ParseCommand(t *testing.T) {
 func generateStream(body string) net.Conn {
 	server, client := net.Pipe()
 	go func() {
-		client.Write([]byte(body))
+		_, _ = client.Write([]byte(body))
 		client.Close()
 	}()
 	return server

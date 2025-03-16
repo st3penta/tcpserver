@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"io"
+	"net"
 	"tcpserver/state"
 	"testing"
 	"time"
@@ -87,21 +88,33 @@ func Test_NewMessageCommand(t *testing.T) {
 }
 
 func Test_MessageCommand_Process(t *testing.T) {
+	mockConn := net.TCPConn{}
 	tests := []struct {
 		name    string
 		lc      *MessageCommand
+		state   State
 		wantRes *Response
 		wantErr error
 	}{
 		{
-			name: "happy path: login command gets processed",
+			name: "happy path: message command gets processed",
 			lc: &MessageCommand{
 				metadata: Metadata{
 					version:       1,
 					cmdCode:       MessageCommandCode,
 					correlationId: 1,
 				},
+				from:      "sender",
+				to:        "recipient",
+				timestamp: time.Time{},
+				message:   "message",
 			},
+			state: func() *state.State {
+				s := state.NewState()
+
+				_ = s.Login(&mockConn, "recipient")
+				return s
+			}(),
 			wantRes: &Response{
 				version:       1,
 				correlationID: 1,
@@ -109,11 +122,28 @@ func Test_MessageCommand_Process(t *testing.T) {
 			},
 			wantErr: nil,
 		},
+		{
+			name: "error: recipient doesn't exist",
+			lc: &MessageCommand{
+				metadata: Metadata{
+					version:       1,
+					cmdCode:       MessageCommandCode,
+					correlationId: 1,
+				},
+				from:      "sender",
+				to:        "recipient",
+				timestamp: time.Time{},
+				message:   "message",
+			},
+			state:   state.NewState(),
+			wantRes: nil,
+			wantErr: state.ErrRecipientNotExists,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			res, err := tt.lc.Process(state.NewState())
+			res, err := tt.lc.Process(tt.state)
 
 			assert.Equal(t, tt.wantRes, res)
 			assert.Equal(t, tt.wantErr, err)

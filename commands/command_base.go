@@ -63,10 +63,9 @@ func ParseCommand(stream net.Conn) (Command, error) {
 func readFieldWithLength(stream io.Reader, fieldLen any) ([]byte, error) {
 	var field []byte
 
-	switch fieldLen.(type) {
+	switch tFieldLen := fieldLen.(type) {
 	case uint16:
 
-		tFieldLen := fieldLen.(uint16)
 		err := binary.Read(stream, binary.BigEndian, &tFieldLen)
 		if err != nil {
 			return nil, err
@@ -76,7 +75,6 @@ func readFieldWithLength(stream io.Reader, fieldLen any) ([]byte, error) {
 
 	case uint32:
 
-		tFieldLen := fieldLen.(uint32)
 		err := binary.Read(stream, binary.BigEndian, &tFieldLen)
 		if err != nil {
 			return nil, err
