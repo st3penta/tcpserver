@@ -1,10 +1,9 @@
 package commands
 
 import (
-	"bufio"
-	"bytes"
 	"errors"
 	"io"
+	"net"
 	"testing"
 	"time"
 
@@ -15,7 +14,7 @@ func Test_ParseCommand(t *testing.T) {
 	mockLoginStream := generateStream("\x00\x00\x00\x11\x01\x00\x01\x00\x00\x00\x01\x00\x08TestUser")
 	tests := []struct {
 		name    string
-		stream  io.Reader
+		stream  net.Conn
 		wantRes Command
 		wantErr error
 	}{
@@ -110,6 +109,11 @@ func Test_ParseCommand(t *testing.T) {
 	}
 }
 
-func generateStream(body string) io.Reader {
-	return bufio.NewReader(bytes.NewBuffer([]byte(body)))
+func generateStream(body string) net.Conn {
+	server, client := net.Pipe()
+	go func() {
+		client.Write([]byte(body))
+		client.Close()
+	}()
+	return server
 }

@@ -57,8 +57,8 @@ func Test_NewLoginCommand(t *testing.T) {
 }
 
 func Test_LoginCommand_Process(t *testing.T) {
-	mockConn1 := bufio.NewReader(nil)
-	mockConn2 := bufio.NewReader(nil)
+	mockConn1 := net.TCPConn{}
+	mockConn2 := net.TCPConn{}
 	tests := []struct {
 		name      string
 		lc        *LoginCommand
@@ -76,14 +76,14 @@ func Test_LoginCommand_Process(t *testing.T) {
 					correlationId: 1,
 				},
 				username: "user2",
-				conn:     mockConn2,
+				conn:     &mockConn2,
 			},
 			state: state.State{
 				LoggedUsers: map[string]bool{
 					"user1": true,
 				},
 				Connections: map[io.Reader]string{
-					mockConn1: "user1",
+					&mockConn1: "user1",
 				},
 			},
 			wantRes: &Response{
@@ -97,8 +97,8 @@ func Test_LoginCommand_Process(t *testing.T) {
 					"user2": true,
 				},
 				Connections: map[io.Reader]string{
-					mockConn1: "user1",
-					mockConn2: "user2",
+					&mockConn1: "user1",
+					&mockConn2: "user2",
 				},
 			},
 			wantErr: nil,

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"time"
 )
 
@@ -17,7 +18,7 @@ var (
 )
 
 type State interface {
-	Login(conn io.Reader, username string) error
+	Login(conn net.Conn, username string) error
 	EnqueueMessage(from string, to string, timestamp time.Time, message string) error
 }
 
@@ -31,7 +32,7 @@ type Metadata struct {
 	correlationId uint32
 }
 
-func ParseCommand(stream io.Reader) (Command, error) {
+func ParseCommand(stream net.Conn) (Command, error) {
 
 	var len uint32
 	body, bErr := readFieldWithLength(stream, len)

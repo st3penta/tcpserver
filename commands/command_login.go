@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"net"
 )
 
 const (
@@ -13,13 +14,13 @@ const (
 type LoginCommand struct {
 	metadata Metadata
 	username string
-	conn     io.Reader
+	conn     net.Conn
 }
 
 func NewLoginCommand(
 	metadata Metadata,
 	stream io.Reader,
-	conn io.Reader,
+	conn net.Conn,
 ) (*LoginCommand, error) {
 
 	var usernameLen uint16
