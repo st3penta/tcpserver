@@ -40,6 +40,8 @@ func ParseCommand(stream io.Reader) (Command, error) {
 	switch metadata.cmdCode {
 	case LoginCommandCode:
 		return NewLoginCommand(*metadata, bodyStream)
+	case CorrelationIDTestCommandCode:
+		return NewCorrelationIDTestCommand(*metadata, bodyStream)
 	// case MessageCommandCode:
 	// 	return s.parseCmdMessage(version, cmdCode, body[3:])
 	default:
