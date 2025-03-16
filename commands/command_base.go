@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"tcpserver/state"
 )
 
 var (
@@ -16,8 +15,12 @@ var (
 	ErrUnsupportedLengthSize = errors.New("unsupported length size")
 )
 
+type State interface {
+	Login(username string) error
+}
+
 type Command interface {
-	Process(state *state.State) (*Response, error)
+	Process(state State) (*Response, error)
 }
 
 type Metadata struct {

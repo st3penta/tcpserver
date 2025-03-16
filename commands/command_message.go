@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"tcpserver/state"
 	"time"
 )
 
@@ -62,7 +61,7 @@ func NewMessageCommand(
 	return mc, nil
 }
 
-func (mc *MessageCommand) Process(state *state.State) (*Response, error) {
+func (mc *MessageCommand) Process(state State) (*Response, error) {
 
 	// TODO actual message processing
 

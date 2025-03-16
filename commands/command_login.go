@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"tcpserver/state"
 )
 
 const (
@@ -43,7 +42,7 @@ func NewLoginCommand(
 	return lc, nil
 }
 
-func (lc *LoginCommand) Process(state *state.State) (*Response, error) {
+func (lc *LoginCommand) Process(state State) (*Response, error) {
 	return &Response{
 		version:       lc.metadata.version,
 		correlationID: lc.metadata.correlationId,
