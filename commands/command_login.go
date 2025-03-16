@@ -8,8 +8,7 @@ import (
 )
 
 var (
-	LoginResponseLength uint32 = 0x0009
-	LoginCommandCode    uint16 = 0x01
+	LoginCommandCode uint16 = 0x01
 
 	ErrLoginCommandTooShort  = errors.New("malformed login command: message is too short")
 	ErrInvalidUsernameLength = errors.New("malformed login command: invalid username length")
