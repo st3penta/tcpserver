@@ -6,17 +6,18 @@ import (
 	"log"
 	"net"
 	"tcpserver/commands"
+	"tcpserver/state"
 )
 
 type Server struct {
-	port        int
-	loggedUsers map[string]bool
+	port  int
+	state *state.State
 }
 
 func NewServer(port int) *Server {
 	return &Server{
-		port:        port,
-		loggedUsers: map[string]bool{},
+		port:  port,
+		state: state.NewState(),
 	}
 }
 
@@ -56,7 +57,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 			break
 		}
 
-		resp, procErr := cmd.Process()
+		resp, procErr := cmd.Process(s.state)
 		if procErr != nil {
 			fmt.Println("Error while processing command:", procErr)
 			break

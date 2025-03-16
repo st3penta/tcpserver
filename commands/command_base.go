@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"tcpserver/state"
 )
 
 var (
@@ -16,7 +17,7 @@ var (
 )
 
 type Command interface {
-	Process() (*Response, error)
+	Process(state *state.State) (*Response, error)
 }
 
 type Metadata struct {

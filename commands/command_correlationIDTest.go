@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"io"
+	"tcpserver/state"
 )
 
 var (
@@ -28,7 +29,7 @@ func NewCorrelationIDTestCommand(
 	return cc, nil
 }
 
-func (cc *CorrelationIDTestCommand) Process() (*Response, error) {
+func (cc *CorrelationIDTestCommand) Process(_ *state.State) (*Response, error) {
 	return &Response{
 		version:       cc.metadata.version,
 		correlationID: cc.metadata.correlationId,
