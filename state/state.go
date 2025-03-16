@@ -1,10 +1,14 @@
 package state
 
-import "errors"
+import (
+	"errors"
+	"io"
+)
 
 type State struct {
-	loggedUsers map[string]bool
-	messages    map[string](chan string)
+	Connections map[io.Reader]string
+	LoggedUsers map[string]bool
+	Messages    map[string](chan string)
 }
 
 var (
@@ -13,30 +17,32 @@ var (
 
 func NewState() *State {
 	return &State{
-		loggedUsers: map[string]bool{},
-		messages:    map[string](chan string){},
+		LoggedUsers: map[string]bool{},
+		Messages:    map[string](chan string){},
 	}
 }
 
 func (s *State) UserExists(username string) bool {
-	_, ok := s.loggedUsers[username]
+	_, ok := s.LoggedUsers[username]
 	return ok
 }
 
 func (s *State) UserIsOnline(username string) bool {
-	return s.loggedUsers[username]
+	return s.LoggedUsers[username]
 }
 
-func (s *State) Login(username string) error {
+func (s *State) Login(conn io.Reader, username string) error {
 
 	if s.UserIsOnline(username) {
 		return ErrUserAlreadyOnline
 	}
 
-	s.loggedUsers[username] = true
+	s.LoggedUsers[username] = true
+	s.Connections[conn] = username
+
 	return nil
 }
 
 func (s *State) Logout(username string) {
-	s.loggedUsers[username] = false
+	s.LoggedUsers[username] = false
 }

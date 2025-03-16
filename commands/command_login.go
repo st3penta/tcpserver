@@ -13,11 +13,13 @@ const (
 type LoginCommand struct {
 	metadata Metadata
 	username string
+	conn     io.Reader
 }
 
 func NewLoginCommand(
 	metadata Metadata,
 	stream io.Reader,
+	conn io.Reader,
 ) (*LoginCommand, error) {
 
 	var usernameLen uint16
@@ -35,6 +37,7 @@ func NewLoginCommand(
 	lc := &LoginCommand{
 		metadata: metadata,
 		username: string(username),
+		conn:     conn,
 	}
 
 	lc.print()
@@ -43,6 +46,12 @@ func NewLoginCommand(
 }
 
 func (lc *LoginCommand) Process(state State) (*Response, error) {
+
+	err := state.Login(lc.conn, lc.username)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Response{
 		version:       lc.metadata.version,
 		correlationID: lc.metadata.correlationId,

@@ -12,15 +12,16 @@ import (
 )
 
 func Test_ParseCommand(t *testing.T) {
+	mockLoginStream := generateStream("\x00\x00\x00\x11\x01\x00\x01\x00\x00\x00\x01\x00\x08TestUser")
 	tests := []struct {
 		name    string
-		body    string
+		stream  io.Reader
 		wantRes Command
 		wantErr error
 	}{
 		{
-			name: "happy path: correct login packet gets parsed",
-			body: "\x00\x00\x00\x11\x01\x00\x01\x00\x00\x00\x01\x00\x08TestUser",
+			name:   "happy path: correct login packet gets parsed",
+			stream: mockLoginStream,
 			wantRes: &LoginCommand{
 				metadata: Metadata{
 					version:       1,
@@ -28,12 +29,13 @@ func Test_ParseCommand(t *testing.T) {
 					correlationId: 1,
 				},
 				username: "TestUser",
+				conn:     mockLoginStream,
 			},
 			wantErr: nil,
 		},
 		{
-			name: "happy path: correct correlationIDTest packet gets parsed",
-			body: "\x00\x00\x00\x07\x01\x00\x09\x00\x00\x00\x0A",
+			name:   "happy path: correct correlationIDTest packet gets parsed",
+			stream: generateStream("\x00\x00\x00\x07\x01\x00\x09\x00\x00\x00\x0A"),
 			wantRes: &CorrelationIDTestCommand{
 				metadata: Metadata{
 					version:       1,
@@ -45,8 +47,8 @@ func Test_ParseCommand(t *testing.T) {
 		},
 
 		{
-			name: "happy path: correct message packet gets parsed",
-			body: "\x00\x00\x00\x1E\x01\x00\x02\x00\x00\x00\x01\x00\x03msg\x00\x03usr\x00\x03rec\x18\x16\x68\x7E\xC0\x57\x00\x00",
+			name:   "happy path: correct message packet gets parsed",
+			stream: generateStream("\x00\x00\x00\x1E\x01\x00\x02\x00\x00\x00\x01\x00\x03msg\x00\x03usr\x00\x03rec\x18\x16\x68\x7E\xC0\x57\x00\x00"),
 			wantRes: &MessageCommand{
 				metadata: Metadata{
 					version:       1,
@@ -62,37 +64,37 @@ func Test_ParseCommand(t *testing.T) {
 		},
 		{
 			name:    "error: malformed command, length field too short",
-			body:    "\x01\x00",
+			stream:  generateStream("\x01\x00"),
 			wantRes: nil,
 			wantErr: io.ErrUnexpectedEOF,
 		},
 		{
 			name:    "error: malformed command, incorrect length",
-			body:    "\x00\x00\x00\x11\x01",
+			stream:  generateStream("\x00\x00\x00\x11\x01"),
 			wantRes: nil,
 			wantErr: io.ErrUnexpectedEOF,
 		},
 		{
 			name:    "error: malformed command, missing metadata",
-			body:    "\x00\x00\x00\x00",
+			stream:  generateStream("\x00\x00\x00\x00"),
 			wantRes: nil,
 			wantErr: errors.New("EOF"),
 		},
 		{
 			name:    "error: malformed metadata, command code too short",
-			body:    "\x00\x00\x00\x02\x01\x00",
+			stream:  generateStream("\x00\x00\x00\x02\x01\x00"),
 			wantRes: nil,
 			wantErr: io.ErrUnexpectedEOF,
 		},
 		{
 			name:    "error: malformed command, correlationId too short",
-			body:    "\x00\x00\x00\x06\x01\x00\x01\x00\x00\x00",
+			stream:  generateStream("\x00\x00\x00\x06\x01\x00\x01\x00\x00\x00"),
 			wantRes: nil,
 			wantErr: io.ErrUnexpectedEOF,
 		},
 		{
 			name:    "error: unknown command",
-			body:    "\x00\x00\x00\x07\x01\x00\x99\x00\x00\x00\x01",
+			stream:  generateStream("\x00\x00\x00\x07\x01\x00\x99\x00\x00\x00\x01"),
 			wantRes: nil,
 			wantErr: ErrUnknownCommand,
 		},
@@ -100,12 +102,14 @@ func Test_ParseCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			buf := bufio.NewReader(bytes.NewBuffer([]byte(tt.body)))
-
-			res, err := ParseCommand(buf)
+			res, err := ParseCommand(tt.stream)
 
 			assert.Equal(t, tt.wantRes, res)
 			assert.Equal(t, tt.wantErr, err)
 		})
 	}
+}
+
+func generateStream(body string) io.Reader {
+	return bufio.NewReader(bytes.NewBuffer([]byte(body)))
 }

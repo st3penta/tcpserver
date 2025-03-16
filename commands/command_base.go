@@ -16,7 +16,7 @@ var (
 )
 
 type State interface {
-	Login(username string) error
+	Login(conn io.Reader, username string) error
 }
 
 type Command interface {
@@ -47,7 +47,7 @@ func ParseCommand(stream io.Reader) (Command, error) {
 
 	switch metadata.cmdCode {
 	case LoginCommandCode:
-		return NewLoginCommand(*metadata, bodyStream)
+		return NewLoginCommand(*metadata, bodyStream, stream)
 	case MessageCommandCode:
 		return NewMessageCommand(*metadata, bodyStream)
 	case CorrelationIDTestCommandCode:

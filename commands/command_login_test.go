@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"io"
+	"net"
 	"tcpserver/state"
 	"testing"
 
@@ -11,6 +12,8 @@ import (
 )
 
 func Test_NewLoginCommand(t *testing.T) {
+	mockConn := net.TCPConn{}
+
 	tests := []struct {
 		name    string
 		body    string
@@ -23,6 +26,7 @@ func Test_NewLoginCommand(t *testing.T) {
 			wantRes: &LoginCommand{
 				metadata: Metadata{},
 				username: "TestUser",
+				conn:     &mockConn,
 			},
 			wantErr: nil,
 		},
@@ -44,7 +48,7 @@ func Test_NewLoginCommand(t *testing.T) {
 
 			buf := bufio.NewReader(bytes.NewBuffer([]byte(tt.body)))
 
-			res, err := NewLoginCommand(Metadata{}, buf)
+			res, err := NewLoginCommand(Metadata{}, buf, &mockConn)
 
 			assert.Equal(t, tt.wantRes, res)
 			assert.Equal(t, tt.wantErr, err)
@@ -53,11 +57,15 @@ func Test_NewLoginCommand(t *testing.T) {
 }
 
 func Test_LoginCommand_Process(t *testing.T) {
+	mockConn1 := bufio.NewReader(nil)
+	mockConn2 := bufio.NewReader(nil)
 	tests := []struct {
-		name    string
-		lc      *LoginCommand
-		wantRes *Response
-		wantErr error
+		name      string
+		lc        *LoginCommand
+		state     state.State
+		wantRes   *Response
+		wantState state.State
+		wantErr   error
 	}{
 		{
 			name: "happy path: login command gets processed",
@@ -67,22 +75,65 @@ func Test_LoginCommand_Process(t *testing.T) {
 					cmdCode:       LoginCommandCode,
 					correlationId: 1,
 				},
-				username: "TestUser",
+				username: "user2",
+				conn:     mockConn2,
+			},
+			state: state.State{
+				LoggedUsers: map[string]bool{
+					"user1": true,
+				},
+				Connections: map[io.Reader]string{
+					mockConn1: "user1",
+				},
 			},
 			wantRes: &Response{
 				version:       1,
 				correlationID: 1,
 				statusCode:    1,
 			},
+			wantState: state.State{
+				LoggedUsers: map[string]bool{
+					"user1": true,
+					"user2": true,
+				},
+				Connections: map[io.Reader]string{
+					mockConn1: "user1",
+					mockConn2: "user2",
+				},
+			},
 			wantErr: nil,
+		},
+		{
+			name: "error: user already online",
+			lc: &LoginCommand{
+				metadata: Metadata{
+					version:       1,
+					cmdCode:       LoginCommandCode,
+					correlationId: 1,
+				},
+				username: "user1",
+			},
+			state: state.State{
+				LoggedUsers: map[string]bool{
+					"user1": true,
+				},
+			},
+			wantRes: nil,
+			wantState: state.State{
+				LoggedUsers: map[string]bool{
+					"user1": true,
+				},
+			},
+			wantErr: state.ErrUserAlreadyOnline,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			res, err := tt.lc.Process(state.NewState())
+			res, err := tt.lc.Process(&tt.state)
 
 			assert.Equal(t, tt.wantRes, res)
+			assert.Equal(t, tt.wantState, tt.state)
 			assert.Equal(t, tt.wantErr, err)
 		})
 	}
