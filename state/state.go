@@ -19,6 +19,7 @@ func NewState() *State {
 	return &State{
 		LoggedUsers: map[string]bool{},
 		Messages:    map[string](chan string){},
+		Connections: map[io.Reader]string{},
 	}
 }
 
