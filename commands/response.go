@@ -8,6 +8,10 @@ import (
 const (
 	ResponseMsgCode uint16 = 0x03
 	ResponseLength  uint32 = 0x0009
+
+	ResponseStatusCodeOK                uint16 = 0x01
+	ResponseStatusCodeUserNotFound      uint16 = 0x03
+	ResponseStatusCodeUserAlreadyLogged uint16 = 0x04
 )
 
 type Response struct {

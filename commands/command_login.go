@@ -51,7 +51,7 @@ func (lc *LoginCommand) Process() (*Response, error) {
 	return &Response{
 		version:       lc.metadata.version,
 		correlationID: lc.metadata.correlationId,
-		statusCode:    1,
+		statusCode:    ResponseStatusCodeOK,
 	}, nil
 }
 
