@@ -49,6 +49,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 
 		cmd, cmdErr := commands.ParseCommand(conn)
 		if cmdErr == io.EOF {
+			s.state.Logout(conn)
 			fmt.Println("Client disconnected")
 			break
 		}

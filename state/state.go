@@ -44,6 +44,7 @@ func (s *State) Login(conn io.Reader, username string) error {
 	return nil
 }
 
-func (s *State) Logout(username string) {
-	s.LoggedUsers[username] = false
+func (s *State) Logout(conn io.Reader) {
+	s.LoggedUsers[s.Connections[conn]] = false
+	delete(s.Connections, conn)
 }
